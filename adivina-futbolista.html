@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adivina el Futbolista - FootHub</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="game.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <a href="index.html" class="back-btn">← Volver al Hub</a>
+            <h1>🤔 Adivina el Futbolista</h1>
+        </header>
+
+        <main class="game-content">
+            <!-- Pantalla de inicio -->
+            <div id="start-screen" class="screen active">
+                <div class="welcome-card">
+                    <h2>¡Bienvenido al Juego!</h2>
+                    <p class="game-description">
+                        Piensa en un futbolista y yo intentaré adivinarlo haciéndote preguntas de sí o no.
+                        Tienes un límite de preguntas según la dificultad elegida.
+                    </p>
+
+                    <h3>Selecciona la Dificultad:</h3>
+                    <div class="difficulty-options">
+                        <div class="difficulty-card" data-difficulty="easy">
+                            <div class="difficulty-icon">😊</div>
+                            <h4>Fácil</h4>
+                            <ul>
+                                <li>20 preguntas</li>
+                                <li>Futbolistas muy populares</li>
+                                <li>Popularidad: ⭐</li>
+                            </ul>
+                            <button class="btn btn-success" onclick="startGame('easy')">Jugar Fácil</button>
+                        </div>
+
+                        <div class="difficulty-card" data-difficulty="medium">
+                            <div class="difficulty-icon">😎</div>
+                            <h4>Intermedio</h4>
+                            <ul>
+                                <li>15 preguntas</li>
+                                <li>Futbolistas conocidos</li>
+                                <li>Popularidad: ⭐⭐</li>
+                            </ul>
+                            <button class="btn btn-warning" onclick="startGame('medium')">Jugar Intermedio</button>
+                        </div>
+
+                        <div class="difficulty-card" data-difficulty="hard">
+                            <div class="difficulty-icon">🔥</div>
+                            <h4>Difícil</h4>
+                            <ul>
+                                <li>10 preguntas</li>
+                                <li>Futbolistas menos conocidos</li>
+                                <li>Popularidad: ⭐⭐⭐</li>
+                            </ul>
+                            <button class="btn btn-danger" onclick="startGame('hard')">Jugar Difícil</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pantalla de juego -->
+            <div id="game-screen" class="screen">
+                <div class="game-header">
+                    <div class="game-info">
+                        <div class="info-item">
+                            <span class="label">Dificultad:</span>
+                            <span id="current-difficulty" class="value"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Preguntas restantes:</span>
+                            <span id="questions-remaining" class="value"></span>
+                        </div>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="progress-fill" class="progress-fill"></div>
+                    </div>
+                </div>
+
+                <div class="game-area">
+                    <div class="question-card">
+                        <h3 id="current-question">¿El jugador juega en LaLiga?</h3>
+                        <div class="answer-buttons">
+                            <button class="btn btn-yes" onclick="answerQuestion('yes')">✓ Sí</button>
+                            <button class="btn btn-no" onclick="answerQuestion('no')">✗ No</button>
+                        </div>
+                    </div>
+
+                    <div class="history-section">
+                        <h4>Historial de Preguntas</h4>
+                        <div id="questions-history" class="questions-list">
+                            <!-- Las preguntas aparecerán aquí -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pantalla de resultado -->
+            <div id="result-screen" class="screen">
+                <div class="result-card">
+                    <div id="result-icon" class="result-icon">🎉</div>
+                    <h2 id="result-title">¡Lo adiviné!</h2>
+                    <div class="player-reveal">
+                        <h3>El jugador es:</h3>
+                        <div class="player-card">
+                            <h2 id="player-name">Kylian Mbappé</h2>
+                            <div class="player-details">
+                                <p><strong>Edad:</strong> <span id="player-age">26</span></p>
+                                <p><strong>Posición:</strong> <span id="player-position">Delantero</span></p>
+                                <p><strong>Club:</strong> <span id="player-club">Real Madrid</span></p>
+                                <p><strong>Liga:</strong> <span id="player-league">LaLiga</span></p>
+                                <p><strong>Nacionalidad:</strong> <span id="player-nationality">Francia</span></p>
+                            </div>
+                            <div class="player-achievements">
+                                <p id="player-achievements"></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="result-stats">
+                        <p>Preguntas utilizadas: <span id="questions-used"></span></p>
+                    </div>
+                    <div class="result-actions">
+                        <button class="btn btn-primary" onclick="restartGame()">Jugar de Nuevo</button>
+                        <a href="index.html" class="btn btn-secondary">Volver al Hub</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>© 2025 FootHub - Adivina el Futbolista</p>
+        </footer>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
