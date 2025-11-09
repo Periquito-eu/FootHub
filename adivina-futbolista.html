@@ -20,7 +20,8 @@
                 <div class="welcome-card">
                     <h2>¡Bienvenido al Juego!</h2>
                     <p class="game-description">
-                        Piensa en un futbolista y yo intentaré adivinarlo haciéndote preguntas de sí o no.
+                        La IA pensará en un futbolista secreto y tú debes adivinarlo.
+                        Puedes hacerle preguntas de sí o no para descubrir quién es.
                         Tienes un límite de preguntas según la dificultad elegida.
                     </p>
 
@@ -80,19 +81,43 @@
                     </div>
                 </div>
 
-                <div class="game-area">
-                    <div class="question-card">
-                        <h3 id="current-question">¿El jugador juega en LaLiga?</h3>
-                        <div class="answer-buttons">
-                            <button class="btn btn-yes" onclick="answerQuestion('yes')">✓ Sí</button>
-                            <button class="btn btn-no" onclick="answerQuestion('no')">✗ No</button>
+                <div class="game-area" id="game-area">
+                    <div class="question-input-card">
+                        <h3>Haz tu pregunta de sí o no:</h3>
+                        <div class="input-group">
+                            <input 
+                                type="text" 
+                                id="player-question" 
+                                class="question-input" 
+                                placeholder="Ej: ¿Juega en LaLiga?"
+                                onkeypress="handleQuestionKeyPress(event)"
+                            />
+                            <button class="btn btn-primary" onclick="submitQuestion()">Enviar</button>
                         </div>
+                        <p class="hint-text">💡 Puedes preguntar sobre: liga, club, posición, edad, logros, número de camiseta, etc.</p>
                     </div>
 
                     <div class="history-section">
-                        <h4>Historial de Preguntas</h4>
+                        <h4>Historial de Preguntas y Respuestas</h4>
                         <div id="questions-history" class="questions-list">
-                            <!-- Las preguntas aparecerán aquí -->
+                            <!-- Las preguntas y respuestas aparecerán aquí -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="guess-area" id="guess-area" style="display: none;">
+                    <div class="guess-card">
+                        <h3>¡Es hora de adivinar!</h3>
+                        <p>Has usado todas tus preguntas. ¿Quién crees que es el futbolista?</p>
+                        <div class="input-group">
+                            <input 
+                                type="text" 
+                                id="final-guess-input" 
+                                class="guess-input" 
+                                placeholder="Escribe el nombre del futbolista"
+                                onkeypress="handleGuessKeyPress(event)"
+                            />
+                            <button class="btn btn-success" onclick="submitGuess()">Adivinar</button>
                         </div>
                     </div>
                 </div>
