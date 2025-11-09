@@ -156,52 +156,67 @@
     gap: 30px;
 }
 
-.question-card {
+.question-input-card {
     background: var(--card-bg);
     border-radius: var(--border-radius);
     padding: 40px;
     text-align: center;
 }
 
-.question-card h3 {
+.question-input-card h3 {
     font-size: 1.8rem;
     margin-bottom: 30px;
     color: var(--text-primary);
-    line-height: 1.4;
 }
 
-.answer-buttons {
+.input-group {
     display: flex;
-    gap: 20px;
-    justify-content: center;
-    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 15px;
 }
 
-.btn-yes,
-.btn-no {
-    min-width: 150px;
-    padding: 15px 40px;
-    font-size: 1.2rem;
+.question-input,
+.guess-input {
+    flex: 1;
+    padding: 15px 20px;
+    font-size: 1.1rem;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    transition: var(--transition);
 }
 
-.btn-yes {
-    background: var(--success-color);
-    color: white;
+.question-input:focus,
+.guess-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background: rgba(255, 255, 255, 0.08);
 }
 
-.btn-yes:hover {
-    background: #229954;
-    transform: scale(1.08);
+.hint-text {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    margin-top: 10px;
 }
 
-.btn-no {
-    background: var(--danger-color);
-    color: white;
+.guess-area {
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 40px;
+    text-align: center;
 }
 
-.btn-no:hover {
-    background: #c0392b;
-    transform: scale(1.08);
+.guess-card h3 {
+    font-size: 2rem;
+    margin-bottom: 15px;
+    color: var(--primary-color);
+}
+
+.guess-card p {
+    color: var(--text-secondary);
+    margin-bottom: 30px;
+    font-size: 1.1rem;
 }
 
 /* Historial de preguntas */
@@ -393,16 +408,16 @@
         grid-template-columns: 1fr;
     }
 
-    .answer-buttons {
+    .input-group {
         flex-direction: column;
     }
 
-    .btn-yes,
-    .btn-no {
+    .input-group .btn {
         width: 100%;
     }
 
-    .question-card h3 {
+    .question-input-card h3,
+    .guess-card h3 {
         font-size: 1.4rem;
     }
 

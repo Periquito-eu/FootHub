@@ -5,9 +5,9 @@ let currentGame = {
     difficulty: null,
     maxQuestions: 0,
     currentQuestion: 0,
-    possiblePlayers: [],
+    secretPlayer: null,
     questionHistory: [],
-    currentQuestionIndex: 0
+    guessedCorrectly: false
 };
 
 const difficultyConfig = {
@@ -16,38 +16,37 @@ const difficultyConfig = {
     hard: { maxQuestions: 10, popularity: [2, 3] }
 };
 
-const questions = [
-    { text: "¿El jugador juega actualmente en LaLiga (España)?", key: "Liga Actual", value: "LaLiga (España)" },
-    { text: "¿El jugador juega en la Premier League (Inglaterra)?", key: "Liga Actual", value: "Premier League (ING)" },
-    { text: "¿El jugador es delantero?", key: "Posición Principal", value: "Delantero (DC)" },
-    { text: "¿El jugador es mediocentro?", key: "Posición Principal", value: "Mediocentro", partial: true },
-    { text: "¿El jugador es defensa?", key: "Posición Principal", value: "Defensa", partial: true },
-    { text: "¿El jugador es portero?", key: "Posición Principal", value: "Portero (POR)" },
-    { text: "¿El jugador juega en el Real Madrid?", key: "Club Actual", value: "Real Madrid" },
-    { text: "¿El jugador juega en el FC Barcelona?", key: "Club Actual", value: "FC Barcelona" },
-    { text: "¿El jugador juega en el Manchester City?", key: "Club Actual", value: "Manchester City" },
-    { text: "¿El jugador tiene menos de 25 años?", key: "Edad", value: 25, type: "less" },
-    { text: "¿El jugador tiene más de 30 años?", key: "Edad", value: 30, type: "greater" },
-    { text: "¿El jugador ha ganado la Champions League?", key: "Hitos Destacados", value: "Champions", partial: true },
-    { text: "¿El jugador ha ganado un Mundial?", key: "Hitos Destacados", value: "Mundial", partial: true },
-    { text: "¿El jugador ha ganado una Eurocopa?", key: "Hitos Destacados", value: "Eurocopa", partial: true },
-    { text: "¿El jugador juega como extremo?", key: "Posición Principal", value: "Extremo", partial: true },
-    { text: "¿El jugador ha ganado el Balón de Oro?", key: "Hitos Destacados", value: "Balón de Oro", partial: true },
-    { text: "¿El jugador juega en la Serie A (Italia)?", key: "Liga Actual", value: "Serie A (ITA)" },
-    { text: "¿El jugador juega en la Bundesliga (Alemania)?", key: "Liga Actual", value: "Bundesliga (ALE)" },
-    { text: "¿El jugador juega en la Ligue 1 (Francia)?", key: "Liga Actual", value: "Ligue 1 (Francia)" },
-    { text: "¿El jugador usa el número 10?", key: "Número", value: "10" },
-    { text: "¿El jugador usa el número 7?", key: "Número", value: "7" },
-    { text: "¿El jugador usa el número 9?", key: "Número", value: "9" },
-    { text: "¿El jugador juega en el Liverpool?", key: "Club Actual", value: "Liverpool FC" },
-    { text: "¿El jugador juega en el Bayern Múnich?", key: "Club Actual", value: "Bayern Múnich" },
-    { text: "¿El jugador juega en el Arsenal?", key: "Club Actual", value: "Arsenal FC" },
-    { text: "¿El jugador juega en el Atlético de Madrid?", key: "Club Actual", value: "Atlético de Madrid" },
-    { text: "¿El jugador ha jugado anteriormente en la Premier League?", key: "Ligas Anteriores", value: "Premier League", partial: true },
-    { text: "¿El jugador puede jugar como lateral?", key: "Otras Posiciones", value: "Lateral", partial: true },
-    { text: "¿El jugador es mediocentro defensivo?", key: "Posición Principal", value: "Mediocentro Defensivo (MCD)" },
-    { text: "¿El jugador es mediocentro ofensivo?", key: "Posición Principal", value: "Mediocentro Ofensivo (MCO)" }
-];
+// Keywords for analyzing player questions
+const questionKeywords = {
+    leagues: {
+        keywords: ['laliga', 'españa', 'premier', 'inglaterra', 'serie a', 'italia', 'bundesliga', 'alemania', 'ligue 1', 'francia', 'mls'],
+        field: 'Liga Actual'
+    },
+    clubs: {
+        keywords: ['real madrid', 'barcelona', 'manchester city', 'liverpool', 'bayern', 'arsenal', 'atletico', 'inter', 'napoli', 'miami'],
+        field: 'Club Actual'
+    },
+    positions: {
+        keywords: ['delantero', 'mediocentro', 'defensa', 'portero', 'extremo', 'lateral', 'mediapunta'],
+        field: 'Posición Principal'
+    },
+    age: {
+        keywords: ['edad', 'años', 'joven', 'viejo', 'veterano'],
+        field: 'Edad'
+    },
+    achievements: {
+        keywords: ['mundial', 'champions', 'eurocopa', 'balon de oro', 'copa', 'ganador', 'campeon'],
+        field: 'Hitos Destacados'
+    },
+    number: {
+        keywords: ['numero', 'número', 'dorsal'],
+        field: 'Número'
+    },
+    nationality: {
+        keywords: ['nacionalidad', 'pais', 'país', 'frances', 'español', 'brasileño', 'argentino', 'ingles'],
+        field: 'Nacionalidad'
+    }
+};
 
 // Cargar datos de jugadores del CSV
 async function loadPlayers() {
@@ -134,23 +133,31 @@ function startGame(difficulty) {
     currentGame.maxQuestions = difficultyConfig[difficulty].maxQuestions;
     currentGame.currentQuestion = 0;
     currentGame.questionHistory = [];
-    currentGame.currentQuestionIndex = 0;
+    currentGame.guessedCorrectly = false;
     
     // Filtrar jugadores según la dificultad
     const allowedPopularity = difficultyConfig[difficulty].popularity;
-    currentGame.possiblePlayers = players.filter(player => {
+    const availablePlayers = players.filter(player => {
         const popularity = parseInt(player["Popularidad (1-5)"]);
         return allowedPopularity.includes(popularity);
     });
     
-    if (currentGame.possiblePlayers.length === 0) {
-        currentGame.possiblePlayers = players;
+    // Seleccionar jugador secreto aleatorio
+    if (availablePlayers.length > 0) {
+        const randomIndex = Math.floor(Math.random() * availablePlayers.length);
+        currentGame.secretPlayer = availablePlayers[randomIndex];
+    } else {
+        // Si no hay jugadores con esa popularidad, usar todos
+        const randomIndex = Math.floor(Math.random() * players.length);
+        currentGame.secretPlayer = players[randomIndex];
     }
+    
+    console.log('Jugador secreto:', currentGame.secretPlayer.Nombre); // Para debugging
     
     // Cambiar a la pantalla de juego
     showScreen('game-screen');
     updateGameUI();
-    askNextQuestion();
+    focusQuestionInput();
 }
 
 // Mostrar pantalla
@@ -177,92 +184,190 @@ function updateGameUI() {
     document.getElementById('progress-fill').style.width = progress + '%';
 }
 
-// Hacer la siguiente pregunta
-function askNextQuestion() {
-    if (currentGame.currentQuestion >= currentGame.maxQuestions || currentGame.possiblePlayers.length <= 3) {
-        endGame();
+// Focus on question input
+function focusQuestionInput() {
+    const input = document.getElementById('player-question');
+    if (input) {
+        input.focus();
+    }
+}
+
+// Submit player's question
+function submitQuestion() {
+    const questionInput = document.getElementById('player-question');
+    const question = questionInput.value.trim();
+    
+    if (!question) {
+        alert('Por favor, escribe una pregunta');
         return;
     }
     
-    // Seleccionar la mejor pregunta (la que mejor divida los jugadores restantes)
-    const bestQuestion = findBestQuestion();
+    // Analyze the question and get AI response
+    const answer = analyzeQuestion(question);
     
-    if (bestQuestion) {
-        document.getElementById('current-question').textContent = bestQuestion.text;
-        currentGame.currentQuestionData = bestQuestion;
-    } else {
-        endGame();
-    }
-}
-
-// Encontrar la mejor pregunta
-function findBestQuestion() {
-    // Filtrar preguntas ya hechas
-    const availableQuestions = questions.filter(q => 
-        !currentGame.questionHistory.some(h => h.question === q.text)
-    );
-    
-    if (availableQuestions.length === 0) return null;
-    
-    // Seleccionar una pregunta relevante aleatoriamente
-    const randomIndex = Math.floor(Math.random() * Math.min(5, availableQuestions.length));
-    return availableQuestions[randomIndex];
-}
-
-// Responder pregunta
-function answerQuestion(answer) {
-    const questionData = currentGame.currentQuestionData;
-    const isYes = answer === 'yes';
-    
-    // Registrar la pregunta en el historial
+    // Add to history
     currentGame.questionHistory.push({
-        question: questionData.text,
-        answer: isYes ? 'Sí' : 'No'
-    });
-    
-    // Filtrar jugadores según la respuesta
-    currentGame.possiblePlayers = currentGame.possiblePlayers.filter(player => {
-        const matches = checkPlayerMatch(player, questionData, isYes);
-        return matches;
+        question: question,
+        answer: answer
     });
     
     currentGame.currentQuestion++;
     
-    // Actualizar historial visual
+    // Clear input
+    questionInput.value = '';
+    
+    // Update UI
     updateQuestionHistory();
     updateGameUI();
     
-    // Siguiente pregunta o finalizar
-    setTimeout(() => {
-        askNextQuestion();
-    }, 300);
+    // Check if game should end
+    if (currentGame.currentQuestion >= currentGame.maxQuestions) {
+        showGuessScreen();
+    } else {
+        focusQuestionInput();
+    }
 }
 
-// Verificar si el jugador coincide con la pregunta
-function checkPlayerMatch(player, question, isYes) {
-    const fieldValue = player[question.key];
+// Analyze player's question and return yes/no based on secret player
+function analyzeQuestion(question) {
+    const lowerQuestion = question.toLowerCase();
+    const player = currentGame.secretPlayer;
     
-    if (!fieldValue) return !isYes;
-    
-    if (question.type === 'less') {
-        const playerValue = parseInt(player[question.key]);
-        const matches = playerValue < question.value;
-        return isYes ? matches : !matches;
+    // Check for specific numbers (like jersey numbers)
+    const numberMatch = lowerQuestion.match(/\b(\d+)\b/);
+    if ((lowerQuestion.includes('numero') || lowerQuestion.includes('número') || lowerQuestion.includes('dorsal')) && numberMatch) {
+        return player['Número'] === numberMatch[1] ? 'Sí' : 'No';
     }
     
-    if (question.type === 'greater') {
-        const playerValue = parseInt(player[question.key]);
-        const matches = playerValue > question.value;
-        return isYes ? matches : !matches;
+    // Check for age-related questions
+    if (lowerQuestion.includes('edad')) {
+        const ageMatch = lowerQuestion.match(/(\d+)/);
+        if (ageMatch) {
+            const age = parseInt(ageMatch[1]);
+            const playerAge = parseInt(player['Edad']);
+            
+            if (lowerQuestion.includes('menos') || lowerQuestion.includes('menor')) {
+                return playerAge < age ? 'Sí' : 'No';
+            } else if (lowerQuestion.includes('mas') || lowerQuestion.includes('más') || lowerQuestion.includes('mayor')) {
+                return playerAge > age ? 'Sí' : 'No';
+            } else {
+                return playerAge === age ? 'Sí' : 'No';
+            }
+        }
     }
     
-    if (question.partial) {
-        const matches = fieldValue.toLowerCase().includes(question.value.toLowerCase());
-        return isYes ? matches : !matches;
+    // Check for leagues
+    if (lowerQuestion.includes('laliga') || lowerQuestion.includes('españa')) {
+        return player['Liga Actual'].toLowerCase().includes('laliga') ? 'Sí' : 'No';
+    }
+    if (lowerQuestion.includes('premier') || lowerQuestion.includes('inglaterra')) {
+        return player['Liga Actual'].toLowerCase().includes('premier') ? 'Sí' : 'No';
+    }
+    if (lowerQuestion.includes('serie a') || lowerQuestion.includes('italia')) {
+        return player['Liga Actual'].toLowerCase().includes('serie a') ? 'Sí' : 'No';
+    }
+    if (lowerQuestion.includes('bundesliga') || lowerQuestion.includes('alemania')) {
+        return player['Liga Actual'].toLowerCase().includes('bundesliga') ? 'Sí' : 'No';
+    }
+    if (lowerQuestion.includes('ligue 1') || lowerQuestion.includes('francia')) {
+        return player['Liga Actual'].toLowerCase().includes('ligue 1') || player['Liga Actual'].toLowerCase().includes('francia') ? 'Sí' : 'No';
+    }
+    if (lowerQuestion.includes('mls')) {
+        return player['Liga Actual'].toLowerCase().includes('mls') ? 'Sí' : 'No';
     }
     
-    const matches = fieldValue === question.value;
-    return isYes ? matches : !matches;
+    // Check for clubs - need to check exact matches for common clubs
+    const clubs = [
+        'real madrid', 'barcelona', 'manchester city', 'liverpool', 'arsenal',
+        'bayern', 'munich', 'atletico', 'inter', 'napoli', 'miami', 'tottenham',
+        'chelsea', 'juventus', 'psg', 'milan'
+    ];
+    for (const club of clubs) {
+        if (lowerQuestion.includes(club)) {
+            return player['Club Actual'].toLowerCase().includes(club) ? 'Sí' : 'No';
+        }
+    }
+    
+    // Check for positions
+    if (lowerQuestion.includes('delantero') || lowerQuestion.includes('atacante')) {
+        return player['Posición Principal'].toLowerCase().includes('delantero') ? 'Sí' : 'No';
+    }
+    if (lowerQuestion.includes('mediocentro') || lowerQuestion.includes('medio')) {
+        return player['Posición Principal'].toLowerCase().includes('mediocentro') || 
+               player['Posición Principal'].toLowerCase().includes('medio') ? 'Sí' : 'No';
+    }
+    if (lowerQuestion.includes('defensa') || lowerQuestion.includes('defensor')) {
+        return player['Posición Principal'].toLowerCase().includes('defensa') ? 'Sí' : 'No';
+    }
+    if (lowerQuestion.includes('portero') || lowerQuestion.includes('arquero') || lowerQuestion.includes('guardameta')) {
+        return player['Posición Principal'].toLowerCase().includes('portero') ? 'Sí' : 'No';
+    }
+    if (lowerQuestion.includes('extremo')) {
+        return player['Posición Principal'].toLowerCase().includes('extremo') || 
+               (player['Otras Posiciones'] && player['Otras Posiciones'].toLowerCase().includes('extremo')) ? 'Sí' : 'No';
+    }
+    if (lowerQuestion.includes('lateral')) {
+        return player['Posición Principal'].toLowerCase().includes('lateral') || 
+               (player['Otras Posiciones'] && player['Otras Posiciones'].toLowerCase().includes('lateral')) ? 'Sí' : 'No';
+    }
+    
+    // Check for achievements
+    if (lowerQuestion.includes('mundial')) {
+        return player['Hitos Destacados'] && player['Hitos Destacados'].toLowerCase().includes('mundial') ? 'Sí' : 'No';
+    }
+    if (lowerQuestion.includes('champions')) {
+        return player['Hitos Destacados'] && player['Hitos Destacados'].toLowerCase().includes('champions') ? 'Sí' : 'No';
+    }
+    if (lowerQuestion.includes('eurocopa')) {
+        return player['Hitos Destacados'] && player['Hitos Destacados'].toLowerCase().includes('eurocopa') ? 'Sí' : 'No';
+    }
+    if (lowerQuestion.includes('balon de oro') || lowerQuestion.includes('balón de oro')) {
+        return player['Hitos Destacados'] && player['Hitos Destacados'].toLowerCase().includes('balón de oro') ? 'Sí' : 'No';
+    }
+    
+    // Default response when question is not understood
+    return 'No estoy seguro';
+}
+
+// Show guess screen
+function showGuessScreen() {
+    // Show the guess input area
+    document.getElementById('game-area').style.display = 'none';
+    document.getElementById('guess-area').style.display = 'block';
+    document.getElementById('final-guess-input').focus();
+}
+
+// Submit final guess
+function submitGuess() {
+    const guessInput = document.getElementById('final-guess-input');
+    const guess = guessInput.value.trim().toLowerCase();
+    
+    if (!guess) {
+        alert('Por favor, escribe el nombre del futbolista');
+        return;
+    }
+    
+    const secretPlayerName = currentGame.secretPlayer.Nombre.toLowerCase();
+    
+    // Check if the guess is correct (allowing some flexibility)
+    currentGame.guessedCorrectly = guess === secretPlayerName || 
+                                    secretPlayerName.includes(guess) ||
+                                    guess.includes(secretPlayerName);
+    
+    showResult();
+}
+
+// Allow Enter key to submit
+function handleQuestionKeyPress(event) {
+    if (event.key === 'Enter') {
+        submitQuestion();
+    }
+}
+
+function handleGuessKeyPress(event) {
+    if (event.key === 'Enter') {
+        submitGuess();
+    }
 }
 
 // Actualizar historial de preguntas
@@ -289,36 +394,31 @@ function updateQuestionHistory() {
 
 // Finalizar el juego
 function endGame() {
-    let guessedPlayer = null;
-    
-    if (currentGame.possiblePlayers.length > 0) {
-        // Seleccionar un jugador aleatorio de los posibles
-        const randomIndex = Math.floor(Math.random() * currentGame.possiblePlayers.length);
-        guessedPlayer = currentGame.possiblePlayers[randomIndex];
-    } else {
-        // Si no quedan jugadores, seleccionar uno aleatorio
-        const randomIndex = Math.floor(Math.random() * players.length);
-        guessedPlayer = players[randomIndex];
-    }
-    
-    showResult(guessedPlayer);
+    showGuessScreen();
 }
 
 // Mostrar resultado
-function showResult(player) {
+function showResult() {
     showScreen('result-screen');
     
-    const won = currentGame.possiblePlayers.length <= 3 && currentGame.possiblePlayers.length > 0;
+    const player = currentGame.secretPlayer;
+    const won = currentGame.guessedCorrectly;
     
-    document.getElementById('result-icon').textContent = won ? '🎉' : '🤔';
-    document.getElementById('result-title').textContent = won ? '¡Lo adiviné!' : '¡Este es mi intento!';
+    document.getElementById('result-icon').textContent = won ? '🎉' : '😢';
+    document.getElementById('result-title').textContent = won ? '¡Correcto! ¡Lo adivinaste!' : '¡No es correcto!';
     
     document.getElementById('player-name').textContent = player.Nombre;
     document.getElementById('player-age').textContent = player.Edad;
     document.getElementById('player-position').textContent = player["Posición Principal"];
     document.getElementById('player-club').textContent = player["Club Actual"];
     document.getElementById('player-league').textContent = player["Liga Actual"];
-    document.getElementById('player-achievements').textContent = player["Hitos Destacados"];
+    document.getElementById('player-achievements').textContent = player["Hitos Destacados"] || 'N/A';
+    
+    // Add nationality if available
+    const nationalityElement = document.getElementById('player-nationality');
+    if (nationalityElement) {
+        nationalityElement.textContent = player["Nacionalidad"] || 'N/A';
+    }
     
     document.getElementById('questions-used').textContent = currentGame.currentQuestion;
 }
@@ -329,10 +429,16 @@ function restartGame() {
         difficulty: null,
         maxQuestions: 0,
         currentQuestion: 0,
-        possiblePlayers: [],
+        secretPlayer: null,
         questionHistory: [],
-        currentQuestionIndex: 0
+        guessedCorrectly: false
     };
+    
+    // Reset game area visibility
+    const gameArea = document.getElementById('game-area');
+    const guessArea = document.getElementById('guess-area');
+    if (gameArea) gameArea.style.display = 'block';
+    if (guessArea) guessArea.style.display = 'none';
     
     showScreen('start-screen');
 }
